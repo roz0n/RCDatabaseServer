@@ -6,7 +6,7 @@ import RediStack
  
  The following is a routes file for a Vapor server that exposes two routes, "get" and "set", both of which accept query params.
  
- The "get" route returns the value of a given key if it exists, while the "set" route stores each key/value pair in a Redis cache.
+ The "get" route returns the value of a given key if it exists, while the "set" route stores each provided key/value pair in a Redis cache.
  As per Vapor's conventions, the Redis configuration exists in the `Sources/App/Controllers/configure.swift` file which is not included in this Gist.
  
  */
@@ -18,7 +18,6 @@ struct SetRouteResponse: Content {
 }
 
 struct GetRouteResponse: Content {
-  var success: Bool
   var value: String?
 }
 
@@ -70,7 +69,7 @@ func routes(_ app: Application) throws {
           throw Abort(.notFound)
         }
         
-        let response = GetRouteResponse(success: true, value: value)
+        let response = GetRouteResponse(value: value)
         promise.succeed(response)
       } catch let error {
         promise.fail(error)
