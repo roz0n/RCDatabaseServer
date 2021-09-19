@@ -1,5 +1,4 @@
 import Vapor
-import Foundation
 import RediStack
 
 /**
@@ -48,7 +47,7 @@ func routes(_ app: Application) throws {
     let components = URLComponents(url: url!, resolvingAgainstBaseURL: false)
     
     guard let components = components, let queryItems = components.queryItems else {
-      throw Abort(.custom(code: 500, reasonPhrase: "Route error"))
+      throw Abort(.custom(code: 500, reasonPhrase: "Failed to parse query params from route"))
     }
     
     for item in queryItems {
