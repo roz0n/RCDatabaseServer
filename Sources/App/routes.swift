@@ -45,32 +45,19 @@ struct GetRouterQueryParams: Content {
 func routes(_ app: Application) throws {
   
   app.get("set") { req -> SetRouteResponse in
-    // Get key (could use regex?)
-    let route = req.url.string
-    let start = route.firstIndex(of: "?")
-    let end = route.firstIndex(of: "=")
+    let url = URL(string: req.url.string)
+    let components = URLComponents(url: url!, resolvingAgainstBaseURL: false)
     
-    guard let start = start, let end = end else {
-      throw Abort(.custom(code: 500, reasonPhrase: "Failed to parse query"))
+    guard let components = components, let queryItems = components.queryItems else {
+      throw Abort(.custom(code: 500, reasonPhrase: "Route error"))
     }
     
-    let startIndex = route.index(start, offsetBy: 1)
-    let endIndex = route.index(end, offsetBy: -1)
-    let key = String(route[startIndex...endIndex])
-    
-    // Store key
-    let _ = app.redis.set(RedisKey(key), to: "test")
-    
+    for item in queryItems {
+      _ = app.redis.set(RedisKey(item.name), to: item.value)
+    }
+
     return SetRouteResponse(success: true)
   }
-  
-//  app.get("set") { req -> SetRouteResponse in
-//    let params = try req.query.decode(SetRouteQueryParams.self)
-//    let convertedParams = params.convertedToRESPValue()
-//    let _ = app.redis.set("somekey", to: convertedParams.string)
-//
-//    return SetRouteResponse(success: true)
-//  }
   
   app.get("get") { req -> EventLoopFuture<GetRouteResponse> in
     let params = try req.query.decode(GetRouterQueryParams.self)
