@@ -4,9 +4,9 @@ import RediStack
 
 /**
  
- The following is a routes file for a Vapor server that exposes two routes, "get" and "set", both of which accept query params.
+ The following is a routes file for a Vapor server that exposes two routes, "get" and "set", both of which accept any number of query parameters.
  
- The "get" route returns the value of a given key if it exists, while the "set" route stores each key/value pair in a Redis cache.
+ The "get" route returns the value of any given keys if they exist, while the "set" route stores provided key/value pairs in a Redis cache.
  As per Vapor's conventions, the Redis configuration exists in the `Sources/App/Controllers/configure.swift` file which is not included in this Gist.
  
  */
@@ -49,7 +49,7 @@ func routes(_ app: Application) throws {
     let components = URLComponents(url: url!, resolvingAgainstBaseURL: false)
     
     guard let components = components, let queryItems = components.queryItems else {
-      throw Abort(.custom(code: 500, reasonPhrase: "Route error"))
+      throw Abort(.custom(code: 500, reasonPhrase: "Failed to parse query params"))
     }
     
     for item in queryItems {
@@ -57,6 +57,35 @@ func routes(_ app: Application) throws {
     }
 
     return SetRouteResponse(success: true)
+  }
+  
+  struct Get2RouteResponse: Content {
+    var value: [String]?
+  }
+  
+  app.get("get2") { req -> EventLoopFuture<[Get2RouteResponse]> in
+    
+    let promise = req.eventLoop.makePromise(of: [Get2RouteResponse].self)
+    let keys = ["somekey", "name", "aaa", "num"]
+    var output = [String]()
+    
+  
+    DispatchQueue.global().async {
+      for key in keys {
+        do {
+          guard let value = try app.redis.get(RedisKey(key), as: String.self).wait() else {
+            throw Abort(.notFound)
+          }
+          
+          let response = GetRouteResponse(success: true, value: value)
+          promise.succeed(response)
+        } catch let error {
+          promise.fail(error)
+        }
+      }
+    }
+    
+    return promise.futureResult
   }
   
   app.get("get") { req -> EventLoopFuture<GetRouteResponse> in
