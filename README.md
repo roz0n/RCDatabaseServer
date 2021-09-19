@@ -1,2 +1,3 @@
 # RCDatabaseServer
-Recurse Center pair programming exercise
+
+Recurse Center's pair programming exercise "Database Server" built with Vapor
