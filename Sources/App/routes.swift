@@ -1,12 +1,11 @@
 import Vapor
-import Foundation
 import RediStack
 
 /**
  
  The following is a routes file for a Vapor server that exposes two routes, "get" and "set", both of which accept any number of query parameters.
  
- The "get" route returns the value of any given keys if they exist, while the "set" route stores provided key/value pairs in a Redis cache.
+ The "get" route returns the value of  given keys if they exist, while the "set" route stores all provided key/value pairs in a Redis cache.
  As per Vapor's conventions, the Redis configuration exists in the `Sources/App/Controllers/configure.swift` file which is not included in this Gist.
  
  */
@@ -18,8 +17,8 @@ struct SetRouteResponse: Content {
 }
 
 struct GetRouteResponse: Content {
-  var success: Bool
-  var value: String?
+  var key: String
+  var value: String
 }
 
 // MARK: - Query Param Models
@@ -55,7 +54,7 @@ func routes(_ app: Application) throws {
     for item in queryItems {
       _ = app.redis.set(RedisKey(item.name), to: item.value)
     }
-
+    
     return SetRouteResponse(success: true)
   }
   
@@ -63,46 +62,25 @@ func routes(_ app: Application) throws {
     var value: [String]?
   }
   
-  app.get("get2") { req -> EventLoopFuture<[Get2RouteResponse]> in
-    
-    let promise = req.eventLoop.makePromise(of: [Get2RouteResponse].self)
+  app.get("get") { req -> EventLoopFuture<[GetRouteResponse]> in
     let keys = ["somekey", "name", "aaa", "num"]
-    var output = [String]()
+    let promise = req.eventLoop.makePromise(of: [GetRouteResponse].self)
     
-  
     DispatchQueue.global().async {
+      var responseData = [GetRouteResponse]()
+      
       for key in keys {
-        do {
-          guard let value = try app.redis.get(RedisKey(key), as: String.self).wait() else {
-            throw Abort(.notFound)
-          }
-          
-          let response = GetRouteResponse(success: true, value: value)
-          promise.succeed(response)
-        } catch let error {
-          promise.fail(error)
+        let value = try? app.redis.get(RedisKey(key), as: String.self).wait()
+        
+        if let value = value {
+          responseData.append(GetRouteResponse(key: key, value: value))
         }
       }
-    }
-    
-    return promise.futureResult
-  }
-  
-  app.get("get") { req -> EventLoopFuture<GetRouteResponse> in
-    let params = try req.query.decode(GetRouterQueryParams.self)
-    let key = RedisKey(stringLiteral: params.key)
-    let promise = req.eventLoop.makePromise(of: GetRouteResponse.self)
-        
-    DispatchQueue.global().async {
-      do {
-        guard let value = try app.redis.get(key, as: String.self).wait() else {
-          throw Abort(.notFound)
-        }
-        
-        let response = GetRouteResponse(success: true, value: value)
-        promise.succeed(response)
-      } catch let error {
-        promise.fail(error)
+      
+      if !responseData.isEmpty {
+        promise.succeed(responseData)
+      } else {
+        promise.fail(Abort(.notFound))
       }
     }
     
