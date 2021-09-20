@@ -3,14 +3,10 @@ import RediStack
 
 /**
  
- The following is a routes file for a Vapor server that exposes two routes, "get" and "set", both of which accept any number of query parameters.
- 
-<<<<<<< HEAD
- The "get" route returns the value of a given key if it exists, while the "set" route stores each provided key/value pair in a Redis cache.
-=======
- The "get" route returns the value of  given keys if they exist, while the "set" route stores all provided key/value pairs in a Redis cache.
->>>>>>> e0d4401c7396ba0afbfc845d551c4ff32ac68321
- As per Vapor's conventions, the Redis configuration exists in the `Sources/App/Controllers/configure.swift` file which is not included in this Gist.
+  The following is a routes file for a Vapor server that exposes two routes, "get" and "set", both of which accept any number of query parameters.
+
+  The "get" route returns the value of given keys if they exist, while the "set" route stores all given key/value pairs in a Redis cache.
+  As per Vapor's conventions, the Redis configuration exists in the `Sources/App/Controllers/configure.swift` file which is not included in this Gist.
  
  */
 
